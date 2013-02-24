@@ -85,7 +85,6 @@ class SaeS3Stream {
 
     const dir_mode = 16895;     //040000 + 0222;
     const file_mode = 33279;    //0100000 + 0777;
-    const sae_mode = 49663 ;    //0100000 + 0777 + 040000;
     const folder_holder_filename = '.sae_folder_holder';
 
     protected static $locked_file = array();
@@ -120,8 +119,8 @@ class SaeS3Stream {
         $this->_sae_stat();
         $this->content = null;
         $this->dirty = false;
-//        if (!is_string($this->stream)) return false;)
 
+        //process open mode
         $IGNORED_MODE = array('b', '+');
         $mode = str_replace($IGNORED_MODE, $mode, '');
         if($mode == 'r' || $mode == 'c'){
@@ -151,10 +150,10 @@ class SaeS3Stream {
     public function stream_write($data){
         if(SAE_LOGGER){
             echo __FUNCTION__;
+            echo 'write: '. $this->filename . ' ' . strlen($data) . "bytes\n";
         }
-//        echo 'write: '. $this->filename . ' ' . strlen($data) . "bytes\n";
-        $this->dirty = true;
 
+        $this->dirty = true;
         $this->_content();
 
         $length = strlen($data);
@@ -217,7 +216,6 @@ class SaeS3Stream {
             var_dump($this->filename);
         }
 
-//        debug_backtrace();
         global $SAE_FS;
         $file_mode = 0;
         $folder_holder = rtrim($this->filename, '/') . '/' . self::folder_holder_filename;
@@ -230,8 +228,6 @@ class SaeS3Stream {
         }
 
         if($file_mode === 0){
-//          $not_exist = true;
-//          $not_exist = false;
             //should return false on non-existed
             return false;
         }
@@ -242,7 +238,6 @@ class SaeS3Stream {
             'dev' => 0,
             'ino' => 0,
             'mode' => $file_mode,
-//            'mode' => $not_exist ? self::dir_mode : self::file_mode,
             'nlink' => 0,
             'uid' => 1,
             'gid' => 1,
@@ -308,13 +303,16 @@ class SaeS3Stream {
         $parsed_url = parse_url($path);
         $domain = $parsed_url['host'];
         $dirname = rtrim($parsed_url['path'], '/') . '/';
+
 //        $tmp_filename = '!!!tmp~' . rand(100000, 10000000) . '.temp';
 //        echo $dirname . $tmp_filename . "\n";
+
         $tmp_filename = self::folder_holder_filename;
         $result = _sae_write_file($dirname . $tmp_filename, '', $domain);
 
         if($result){
-//            _sae_remove_file($dirname . $tmp_filename, $domain);
+            //sae remove folder once last file removed
+            //_sae_remove_file($dirname . $tmp_filename, $domain);
         }
 
         return !!$result;
@@ -344,7 +342,7 @@ class SaeS3Stream {
         if($result){
             $this->dirty = false;
         }
-//        echo "stream_flushed!!!\n";
+
         return !!$result;
     }
 
@@ -390,11 +388,6 @@ class SaeS3Stream {
 
 Class SaeS3StreamGzip extends SaeS3Stream{
     protected $enctype = 'gzip';
-
-    public function stream_open($url, $mode, $options, &$opened_path){
-
-        return parent::stream_open($url, $mode, $options, $opened_path);
-    }
 
     protected function _length(){
         $this->_content();
