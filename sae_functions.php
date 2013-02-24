@@ -420,7 +420,7 @@ Class SaeS3StreamGzip extends SaeS3Stream{
         if($result){
             $this->dirty = false;
         }
-//        echo "stream_flushed!!!\n";
+
         return !!$result;
     }
 }
